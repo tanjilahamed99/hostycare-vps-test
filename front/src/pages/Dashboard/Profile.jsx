@@ -440,7 +440,7 @@ const Profile = () => {
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Available Minutes</span>
-                  <span className="font-bold text-gray-900">{myInfo?.subscription?.minute || 0} min</span>
+                  <span className="font-bold text-gray-900">{myInfo?.subscription?.minute.toFixed(2) || 0} min</span>
                 </div>
                 
                 <div className="flex items-center justify-between">

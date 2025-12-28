@@ -21,7 +21,6 @@ const CallContext = createContext();
 
 export const Provider = ({ children }) => {
   const navigate = useNavigate();
-
   // Global states
   const [incomingCall, setIncomingCall] = useState(null);
   const [user, setUser] = useState(null);
@@ -29,9 +28,6 @@ export const Provider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [myInfo, setMyInfo] = useState(null);
-  const [minutes, setMinutes] = useState(0);
-  const [isInCall, setIsInCall] = useState(false);
-  const [startTime, setStartTime] = useState(null);
   const [isRoomClosed, setIsRoomClosed] = useState(false);
 
   const logout = async () => {
@@ -106,8 +102,6 @@ export const Provider = ({ children }) => {
 
   // ✅ SOCKET HANDLING
   useEffect(() => {
-    if (!socket || !user) return;
-
     socket.on("connection", () => {
       console.log("✅ Socket connected");
     });
@@ -115,46 +109,49 @@ export const Provider = ({ children }) => {
     if (user) {
       socket.emit("register", user.id);
     }
-
+    if (!user) {
+      socket.emit("register", localStorage.getItem("guestName"));
+    }
     socket.on("incoming-call", ({ from, roomName }) => {
       setIncomingCall({ from, roomName });
       setModalOpen(true);
     });
 
-    socket.on("call-accepted", ({ roomName, peerSocketId }) => {
-      navigate(
-        `/room?roomName=${roomName}&username=${user.name}&peerSocketId=${peerSocketId}`
-      );
-    });
-
-    socket.on("call-declined", () => {});
+    if (user) {
+      socket.on("call-accepted", ({ roomName, peerSocketId }) => {
+        navigate(
+          `/room?roomName=${roomName}&username=${user.name}&peerSocketId=${peerSocketId}`
+        );
+      });
+    }
 
     socket.on("end-call", () => {
       if (user) {
-        if (minutes <= 0) {
+        const callStart = Number(localStorage.getItem("callStart"));
+        if (!callStart) {
+          return navigate("/");
+        }
+        const totalSeconds = Math.floor((Date.now() - callStart) / 1000);
+        const totalMinutes = totalSeconds / 60;
+        if (totalMinutes <= 0) {
           return navigate("/"); // redirect back to home (or show a modal)
         }
-
-        let newBalance = myInfo.subscription.minute - minutes;
-
+        let newBalance = myInfo.subscription.minute - totalMinutes;
         if (newBalance < 0) {
           newBalance = 0;
         }
-
         const dataa = {
           "subscription.minute": newBalance,
         };
         const fetch = async () => {
           const { data } = await updateUser({ id: user.id, data: dataa });
           if (data.success) {
-            setMinutes(0);
-            console.log(data);
-            return navigate("/"); // redirect back to home (or show a modal)
+            localStorage.removeItem("callStart");
           }
         };
         fetch();
       }
-      navigate("/"); // redirect back to home (or show a modal)
+      navigate("/");
     });
 
     socket.on("callCanceled", (data) => {
@@ -171,7 +168,7 @@ export const Provider = ({ children }) => {
       socket.off("end-call");
       socket.off("callCanceled");
     };
-  }, [user, navigate, myInfo, minutes]);
+  }, [user, navigate, myInfo]);
 
   useEffect(() => {
     if (user?.id) {
@@ -201,17 +198,6 @@ export const Provider = ({ children }) => {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  useEffect(() => {
-    let interval;
-    if (isInCall && startTime) {
-      interval = setInterval(() => {
-        const diff = Math.floor((Date.now() - startTime) / 1000 / 60);
-        setMinutes(diff);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isInCall, startTime]);
-
   const acceptCall = useCallback(() => {
     if (!incomingCall) return;
 
@@ -232,10 +218,9 @@ export const Provider = ({ children }) => {
       guestSocketId: incomingCall.from.socketId,
     });
     setModalOpen(false);
-    setIsInCall(true);
-    setStartTime(Date.now());
-    setMinutes(0);
-
+    // when call starts
+    const startTime = Date.now(); // milliseconds
+    localStorage.setItem("callStart", startTime);
     navigate(
       `/room?roomName=${incomingCall.roomName}&username=${user.name}&peerSocketId=${incomingCall.from.socketId}`
     );
@@ -244,17 +229,41 @@ export const Provider = ({ children }) => {
   // ✅ Helper functions
   const handleEndCall = useCallback(
     (peerSocketId) => {
-      socket.emit("end-call", { targetSocketId: peerSocketId });
-      setIsInCall(false);
-      setStartTime(null);
+      if (user) {
+        const callStart = Number(localStorage.getItem("callStart"));
+        if (!callStart) {
+          return navigate("/");
+        }
+        const totalSeconds = Math.floor((Date.now() - callStart) / 1000);
+        const totalMinutes = totalSeconds / 60;
+        if (totalMinutes <= 0) {
+          return navigate("/"); // redirect back to home (or show a modal)
+        }
+        let newBalance = myInfo.subscription.minute - totalMinutes;
+        if (newBalance < 0) {
+          newBalance = 0;
+        }
+        const dataa = {
+          "subscription.minute": newBalance,
+        };
+        const fetch = async () => {
+          await updateUser({ id: user.id, data: dataa });
+        };
+        fetch();
+        socket.emit("end-call", {
+          targetSocketId: incomingCall.from.gestSocketId,
+        });
+      } else {
+        socket.emit("end-call", { targetSocketId: peerSocketId });
+      }
+      localStorage.removeItem("callStart");
       navigate("/");
     },
     [navigate]
   );
 
-
   // ✅ Data available everywhere
-  const data = {                                                                                                                                                                         
+  const data = {
     handleEndCall,
     incomingCall,
     declineCall,

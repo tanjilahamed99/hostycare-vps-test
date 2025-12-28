@@ -90,11 +90,15 @@ io.on("connection", (socket) => {
   // Guest calls registered user
   socket.on("guest-call", async ({ from, to, roomName, fcmToken }) => {
     const target = userSockets.find((entry) => entry.id === to);
-
     // 1. Notify via Socket (Foreground)
     if (target) {
       io.to(target.socketId).emit("incoming-call", {
-        from: { name: from, guest: true, socketId: socket.id },
+        from: {
+          name: from,
+          gestSocketId: socket.id,
+          guest: true,
+          socketId: socket.id,
+        },
         roomName,
       });
     }
@@ -153,10 +157,7 @@ io.on("connection", (socket) => {
 
   // When a user ends the call
   socket.on("end-call", ({ targetSocketId }) => {
-    // Notify the other peer
     io.to(targetSocketId).emit("end-call");
-    // Also notify the sender (so both clean up at once)
-    io.to(socket.id).emit("end-call");
   });
 
   // When the caller cancels the call

@@ -31,29 +31,6 @@ const Home = () => {
       {/* Hero Section with Slider */}
       <section className="relative overflow-hidden">
         <BannerSlider />
-
-        {/* Hero Overlay Content */}
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/70 via-transparent to-black/30">
-          <div className="text-center px-4 max-w-6xl mx-auto">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-              Instant Calls,
-              <span className="text-red-500"> Seamless</span> Connections
-            </h1>
-            <p className="text-lg md:text-xl text-gray-200 mb-8 max-w-3xl mx-auto">
-              Professional, secure, and crystal-clear voice communication
-              powered by cutting-edge technology. Connect instantly with QR
-              scanning and enjoy enterprise-grade security.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <GuestModal />
-              <a
-                href="#features"
-                className="px-8 py-3 bg-transparent border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-red-600 transition-all duration-300 transform hover:scale-105">
-                Explore Features
-              </a>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Stats Section */}

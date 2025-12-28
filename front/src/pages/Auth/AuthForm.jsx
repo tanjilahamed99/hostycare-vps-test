@@ -258,7 +258,7 @@ const AuthForm = () => {
             <div className="text-center">
               <p className="text-sm text-gray-500">
                 {signUp ? "Already have an account?" : "Don't have an account?"}{" "}
-                <button
+              <button
                   type="button"
                   onClick={() => setSignUp(!signUp)}
                   className="font-semibold text-red-500 hover:text-red-400 transition-colors duration-200"

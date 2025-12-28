@@ -61,7 +61,7 @@ const Dashboard = () => {
   const stats = [
     {
       title: "Available Minutes",
-      value: myInfo?.subscription?.minute || "0",
+      value: myInfo?.subscription?.minute.toFixed(2) || "0",
       change: "+12%",
       icon: Clock,
       color: "from-blue-600 to-cyan-500",
@@ -275,7 +275,7 @@ const Dashboard = () => {
                         Minute Usage
                       </span>
                       <span className="text-sm font-bold text-gray-900">
-                        {myInfo?.subscription?.minute || 0} minutes available
+                        {myInfo?.subscription?.minute.toFixed(2) || 0} minutes available
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">

@@ -2,32 +2,13 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useCall } from "../../Provider/Provider";
-import {
-  Phone,
-  PhoneCall,
-  PhoneOff,
-  User,
-  X,
-  Volume2,
-  VolumeX,
-  Clock,
-  Info,
-  Mic,
-  MicOff,
-  Video,
-  VideoOff,
-  MessageSquare,
-  Bell,
-} from "lucide-react";
+import { Phone, PhoneCall, PhoneOff, User, X, Clock, Info } from "lucide-react";
 
 export default function CallPopup() {
   const { incomingCall, declineCall, acceptCall, modalOpen } = useCall();
   const [canPlaySound, setCanPlaySound] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [callDuration, setCallDuration] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const audioRef = useRef(null);
-  const timerRef = useRef(null);
 
   // Enable sound on first user interaction
   useEffect(() => {
@@ -40,26 +21,6 @@ export default function CallPopup() {
     };
   }, []);
 
-  // Start/stop timer when call is accepted
-  useEffect(() => {
-    if (timerActive) {
-      timerRef.current = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [timerActive]);
-
   // Handle call acceptance
   const handleAcceptCall = () => {
     setTimerActive(true);
@@ -69,13 +30,12 @@ export default function CallPopup() {
   // Handle call decline
   const handleDeclineCall = () => {
     setTimerActive(false);
-    setCallDuration(0);
     declineCall();
   };
 
   // Play / stop ringtone
   useEffect(() => {
-    if (!incomingCall || !canPlaySound || !soundEnabled) return;
+    if (!incomingCall || !canPlaySound) return;
 
     // Create audio only once
     if (!audioRef.current) {
@@ -104,31 +64,8 @@ export default function CallPopup() {
         audioRef.current.currentTime = 0;
       }
     };
-  }, [incomingCall, canPlaySound, modalOpen, soundEnabled]);
+  }, [incomingCall, canPlaySound, modalOpen]);
 
-  // Format time display
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  // Toggle sound
-  const toggleSound = () => {
-    setSoundEnabled(!soundEnabled);
-    if (audioRef.current) {
-      if (!soundEnabled) {
-        audioRef.current
-          .play()
-          .catch((err) => console.log("Could not play sound:", err));
-      } else {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-    }
-  };
 
   if (!incomingCall) return null;
 
@@ -210,16 +147,7 @@ export default function CallPopup() {
                     {incomingCall.from.name}
                   </h3>
 
-                  {timerActive ? (
-                    <div className="flex items-center justify-center gap-2 text-gray-300">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-lg font-mono font-bold text-green-400">
-                        {formatTime(callDuration)}
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-gray-300">Video Call Request</p>
-                  )}
+                  <p className="text-gray-300">Video Call Request</p>
 
                   {incomingCall.from.email && (
                     <p className="text-sm text-gray-400 mt-1">
@@ -230,68 +158,27 @@ export default function CallPopup() {
 
                 {/* Call controls */}
                 <div className="space-y-6">
-                  {/* Sound control */}
-                  {!timerActive && (
-                    <div className="flex items-center justify-center gap-3">
-                      <button
-                        onClick={toggleSound}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors">
-                        {soundEnabled ? (
-                          <>
-                            <Volume2 className="w-4 h-4" />
-                            <span className="text-sm">Mute Ring</span>
-                          </>
-                        ) : (
-                          <>
-                            <VolumeX className="w-4 h-4" />
-                            <span className="text-sm">Unmute Ring</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-
                   {/* Main action buttons */}
                   <div className="flex items-center justify-center gap-6">
-                    {timerActive ? (
-                      // Active call controls
-                      <>
-                        <button className="p-4 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors">
-                          <Mic className="w-6 h-6" />
-                        </button>
-                        <button className="p-4 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors">
-                          <Video className="w-6 h-6" />
-                        </button>
-                        <button
-                          onClick={handleDeclineCall}
-                          className="p-4 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-red-500/30 transition-all animate-pulse">
-                          <PhoneOff className="w-6 h-6" />
-                        </button>
-                      </>
-                    ) : (
-                      // Incoming call controls
-                      <>
-                        <button
-                          onClick={handleDeclineCall}
-                          className="relative group">
-                          <div className="absolute inset-0 rounded-full bg-red-600/30 group-hover:bg-red-600/50 animate-ping"></div>
-                          <div className="relative flex flex-col items-center gap-2 p-4 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-red-500/30 transition-all">
-                            <PhoneOff className="w-8 h-8" />
-                            <span className="text-xs font-medium">Decline</span>
-                          </div>
-                        </button>
+                    <button
+                      onClick={handleDeclineCall}
+                      className="relative group">
+                      <div className="absolute inset-0 rounded-full bg-red-600/30 group-hover:bg-red-600/50 animate-ping"></div>
+                      <div className="relative flex flex-col items-center gap-2 p-4 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-red-500/30 transition-all">
+                        <PhoneOff className="w-8 h-8" />
+                        <span className="text-xs font-medium">Decline</span>
+                      </div>
+                    </button>
 
-                        <button
-                          onClick={handleAcceptCall}
-                          className="relative group">
-                          <div className="absolute inset-0 rounded-full bg-green-600/30 group-hover:bg-green-600/50 animate-ping delay-150"></div>
-                          <div className="relative flex flex-col items-center gap-2 p-4 rounded-full bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/30 transition-all">
-                            <Phone className="w-8 h-8" />
-                            <span className="text-xs font-medium">Accept</span>
-                          </div>
-                        </button>
-                      </>
-                    )}
+                    <button
+                      onClick={handleAcceptCall}
+                      className="relative group">
+                      <div className="absolute inset-0 rounded-full bg-green-600/30 group-hover:bg-green-600/50 animate-ping delay-150"></div>
+                      <div className="relative flex flex-col items-center gap-2 p-4 rounded-full bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/30 transition-all">
+                        <Phone className="w-8 h-8" />
+                        <span className="text-xs font-medium">Accept</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
 
